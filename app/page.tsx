@@ -187,8 +187,8 @@ export default function HomePage() {
           />
 
           {/* Overlays de contraste */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/50" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/60 to-black/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-black/30" />
 
           {/* Conteneur centré verticalement */}
           <div className="relative mx-auto flex h-full max-w-7xl items-center px-3 sm:px-4 py-8 sm:py-10">

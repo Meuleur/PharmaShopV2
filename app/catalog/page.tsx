@@ -8,19 +8,33 @@ import { ProductCard } from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { supabase, type Product, type Category, type Brand } from "@/lib/supabase"
-import { Sliders, X, ChevronDown, Filter, Tag, ChevronRight, Stethoscope } from "lucide-react"
+import {
+  Sliders,
+  X,
+  ChevronDown,
+  Filter,
+  Tag,
+  ChevronRight,
+  HeartPulse,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+} from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 function CatalogContent() {
   const searchParams = useSearchParams()
-  const categoryParam = searchParams.get('category')
+  const categoryParam = searchParams.get("category")
 
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState("popular")
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryParam ? [categoryParam] : [])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    categoryParam ? [categoryParam] : []
+  )
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState([0, 100])
   const [minRating, setMinRating] = useState<number | null>(null)
@@ -34,22 +48,47 @@ function CatalogContent() {
   const [selectedMedicalEquipment, setSelectedMedicalEquipment] = useState<string[]>([])
 
   const medicalEquipmentCategories = [
-    'orthopedie',
-    'podologie',
-    'contention',
-    'oncologie',
-    'incontinence',
-    'maintien-domicile',
-    'consommables-medicaux',
-    'post-operatoire',
-    'droguerie-preparatoire'
+    "orthopedie",
+    "podologie",
+    "contention",
+    "oncologie",
+    "incontinence",
+    "maintien-domicile",
+    "consommables-medicaux",
+    "post-operatoire",
+    "droguerie-preparatoire",
   ]
+
+  // Slides d'arrière-plan du hero catalogue
+  const heroSlides = [
+    {
+      src: "/test3.jpg",
+      alt: "Présentoir de produits de pharmacie",
+    },
+    {
+      src: "/test4.jpg",
+      alt: "Sélection de produits bien-être",
+    },
+  ]
+
+  const [currentSlide, setCurrentSlide] = useState(0)
+
+  // Changement d'image toutes les 5 secondes
+  useEffect(() => {
+    if (heroSlides.length <= 1) return
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [heroSlides.length])
 
   useEffect(() => {
     async function fetchData() {
       const [categoriesRes, brandsRes] = await Promise.all([
-        supabase.from('categories').select('*').order('display_order'),
-        supabase.from('brands').select('*').order('name')
+        supabase.from("categories").select("*").order("display_order"),
+        supabase.from("brands").select("*").order("name"),
       ])
 
       if (categoriesRes.data) setCategories(categoriesRes.data)
@@ -71,60 +110,62 @@ function CatalogContent() {
       setLoading(true)
       try {
         let query = supabase
-          .from('products')
-          .select(`
+          .from("products")
+          .select(
+            `
             *,
             brand:brands(*),
             category:categories(*)
-          `)
-          .gte('price', priceRange[0])
-          .lte('price', priceRange[1])
+          `
+          )
+          .gte("price", priceRange[0])
+          .lte("price", priceRange[1])
 
         if (selectedCategories.length > 0 || selectedMedicalEquipment.length > 0) {
           const allSelectedSlugs = [...selectedCategories, ...selectedMedicalEquipment]
           const categoryIds = categories
-            .filter(c => allSelectedSlugs.includes(c.slug))
-            .map(c => c.id)
+            .filter((c) => allSelectedSlugs.includes(c.slug))
+            .map((c) => c.id)
           if (categoryIds.length > 0) {
-            query = query.in('category_id', categoryIds)
+            query = query.in("category_id", categoryIds)
           }
         }
 
         if (selectedBrands.length > 0) {
           const brandIds = brands
-            .filter(b => selectedBrands.includes(b.slug))
-            .map(b => b.id)
-          query = query.in('brand_id', brandIds)
+            .filter((b) => selectedBrands.includes(b.slug))
+            .map((b) => b.id)
+          query = query.in("brand_id", brandIds)
         }
 
         if (minRating) {
-          query = query.gte('rating', minRating)
+          query = query.gte("rating", minRating)
         }
 
         if (showNewOnly) {
-          query = query.eq('is_new', true)
+          query = query.eq("is_new", true)
         }
 
         if (showInStockOnly) {
-          query = query.gt('stock_quantity', 0)
+          query = query.gt("stock_quantity", 0)
         }
 
         switch (sortBy) {
-          case 'price-low':
-            query = query.order('price', { ascending: true })
+          case "price-low":
+            query = query.order("price", { ascending: true })
             break
-          case 'price-high':
-            query = query.order('price', { ascending: false })
+          case "price-high":
+            query = query.order("price", { ascending: false })
             break
-          case 'newest':
-            query = query.order('created_at', { ascending: false })
+          case "newest":
+            query = query.order("created_at", { ascending: false })
             break
-          case 'rating':
-            query = query.order('rating', { ascending: false })
+          case "rating":
+            query = query.order("rating", { ascending: false })
             break
           default:
-            query = query.order('is_featured', { ascending: false })
-            query = query.order('review_count', { ascending: false })
+            query = query.order("is_featured", { ascending: false })
+            query = query.order("review_count", { ascending: false })
         }
 
         const { data, error } = await query
@@ -132,7 +173,7 @@ function CatalogContent() {
         if (error) throw error
         setProducts(data || [])
       } catch (error) {
-        console.error('Error fetching products:', error)
+        console.error("Error fetching products:", error)
       } finally {
         setLoading(false)
       }
@@ -141,7 +182,18 @@ function CatalogContent() {
     if (categories.length > 0 || selectedCategories.length === 0) {
       fetchProducts()
     }
-  }, [sortBy, selectedCategories, selectedMedicalEquipment, selectedBrands, priceRange, minRating, showNewOnly, showInStockOnly, categories, brands])
+  }, [
+    sortBy,
+    selectedCategories,
+    selectedMedicalEquipment,
+    selectedBrands,
+    priceRange,
+    minRating,
+    showNewOnly,
+    showInStockOnly,
+    categories,
+    brands,
+  ])
 
   const activeFiltersCount =
     selectedCategories.length +
@@ -163,51 +215,46 @@ function CatalogContent() {
   }
 
   const toggleCategory = (slug: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(slug)
-        ? prev.filter(c => c !== slug)
-        : [...prev, slug]
+    setSelectedCategories((prev) =>
+      prev.includes(slug) ? prev.filter((c) => c !== slug) : [...prev, slug]
     )
   }
 
   const toggleBrand = (slug: string) => {
-    setSelectedBrands(prev =>
-      prev.includes(slug)
-        ? prev.filter(b => b !== slug)
-        : [...prev, slug]
+    setSelectedBrands((prev) =>
+      prev.includes(slug) ? prev.filter((b) => b !== slug) : [...prev, slug]
     )
   }
 
   const toggleMedicalEquipment = (slug: string) => {
-    setSelectedMedicalEquipment(prev =>
-      prev.includes(slug)
-        ? prev.filter(m => m !== slug)
-        : [...prev, slug]
+    setSelectedMedicalEquipment((prev) =>
+      prev.includes(slug) ? prev.filter((m) => m !== slug) : [...prev, slug]
     )
   }
 
   const removeFilter = (type: string, value?: string) => {
     switch (type) {
-      case 'category':
-        if (value) setSelectedCategories(prev => prev.filter(c => c !== value))
+      case "category":
+        if (value) setSelectedCategories((prev) => prev.filter((c) => c !== value))
         break
-      case 'brand':
-        if (value) setSelectedBrands(prev => prev.filter(b => b !== value))
+      case "brand":
+        if (value) setSelectedBrands((prev) => prev.filter((b) => b !== value))
         break
-      case 'rating':
+      case "rating":
         setMinRating(null)
         break
-      case 'price':
+      case "price":
         setPriceRange([0, 100])
         break
-      case 'new':
+      case "new":
         setShowNewOnly(false)
         break
-      case 'stock':
+      case "stock":
         setShowInStockOnly(false)
         break
-      case 'medical':
-        if (value) setSelectedMedicalEquipment(prev => prev.filter(m => m !== value))
+      case "medical":
+        if (value)
+          setSelectedMedicalEquipment((prev) => prev.filter((m) => m !== value))
         break
     }
   }
@@ -235,21 +282,138 @@ function CatalogContent() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-background">
+      <main className="flex-1 bg-slate-50">
+        {/* Fil d'Ariane */}
         <div className="border-b border-border bg-transparent">
           <div className="mx-auto max-w-7xl px-4 py-3 text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-primary transition-colors">Accueil</Link>
+            <Link href="/" className="hover:text-primary transition-colors">
+              Accueil
+            </Link>
             <span className="mx-2">/</span>
             <span className="text-foreground">Catalogue</span>
           </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-4xl font-bold mb-2">Tous les produits</h1>
-            <p className="text-muted-foreground text-sm md:text-base">Découvrez notre sélection de produits de santé et bien-être</p>
-          </div>
+          {/* HERO CATALOGUE avec images en arrière-plan */}
+          <section className="relative overflow-hidden rounded-3xl mb-8 border border-slate-200 shadow-soft">
+            {/* Images de fond */}
+            <div className="absolute inset-0">
+              {heroSlides.map((slide, index) => (
+                <div
+                  key={slide.src}
+                  className={`absolute inset-0 transition-opacity duration-700 ${
+                    index === currentSlide ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
+                    priority={index === 0}
+                  />
+                </div>
+              ))}
+            </div>
 
+            {/* Overlays pour lisibilité + teinte Elsie */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/35 to-black/65" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-primary/15 to-transparent mix-blend-multiply" />
+
+            {/* Contenu hero */}
+            <div className="relative z-10 py-8 md:py-12 lg:py-14 px-6 md:px-10">
+              <div className="max-w-2xl text-white">
+                <div className="inline-flex items-center gap-2 bg-white/90 text-primary rounded-full px-4 py-2 text-xs md:text-sm font-medium mb-4 shadow-soft">
+                  <HeartPulse className="h-4 w-4" />
+                  <span>Les produits proposés par la Pharmacie Croix d&apos;Or</span>
+                </div>
+
+                <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
+                  Votre catalogue santé &amp; bien-être
+                </h1>
+
+                <p className="text-xs md:text-sm lg:text-base text-white/90 max-w-xl mb-4">
+                  Une sélection de médicaments, de soins et de produits de bien-être, construite
+                  par notre équipe officinale pour accompagner votre quotidien, en toute
+                  sécurité.
+                </p>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 text-[11px] md:text-xs mb-4">
+                  <span className="rounded-full bg-white/15 px-3 py-1 border border-white/30">
+                    Soins du quotidien
+                  </span>
+                  <span className="rounded-full bg-white/15 px-3 py-1 border border-white/30">
+                    Bien-être &amp; prévention
+                  </span>
+                  <span className="rounded-full bg-white/15 px-3 py-1 border border-white/30">
+                    Conseils de votre pharmacien
+                  </span>
+                </div>
+
+                {/* Accès rapide + indicateurs */}
+                <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white text-primary px-3 py-1.5 font-medium hover:bg-slate-100 transition-colors"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    Tout le catalogue
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewOnly(!showNewOnly)
+                      setSortBy("newest")
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-colors ${
+                      showNewOnly
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-black/30 border-white/40 text-white hover:bg-black/20"
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Nouveautés
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowInStockOnly(!showInStockOnly)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-colors ${
+                      showInStockOnly
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-black/30 border-white/40 text-white hover:bg-black/20"
+                    }`}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    En stock uniquement
+                  </button>
+
+                  <span className="ml-1 text-[11px] md:text-xs text-white/80">
+                    {loading ? "Chargement des produits..." : `${products.length} produit${products.length !== 1 ? "s" : ""} disponibles`}
+                  </span>
+                </div>
+
+                {/* Indicateurs de slide */}
+                <div className="flex items-center gap-1.5 mt-5">
+                  {heroSlides.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all ${
+                        i === currentSlide ? "bg-white w-6" : "bg-white/60 w-3"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* CONTENU PRINCIPAL : filtres + produits */}
           <div className="flex flex-col lg:flex-row gap-6">
             <aside className="w-full lg:w-80 flex-shrink-0">
               <div className="lg:sticky lg:top-24">
@@ -265,7 +429,11 @@ function CatalogContent() {
                         {activeFiltersCount}
                       </Badge>
                     )}
-                    <ChevronDown className={`h-4 w-4 transition-transform ml-auto ${showFilters ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ml-auto ${
+                        showFilters ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
 
                   <div className="hidden lg:flex items-center justify-between gap-2 w-full">
@@ -304,92 +472,126 @@ function CatalogContent() {
                   )}
                 </div>
 
+                {/* Filtres - mobile */}
                 {showFilters && (
                   <div className="bg-white rounded-2xl shadow-soft border border-border p-4 space-y-3 animate-in fade-in slide-in-from-top-4 duration-300 lg:hidden">
                     <div className="border border-border rounded-xl overflow-hidden">
                       <button
-                        onClick={() => toggleSection('categories')}
+                        onClick={() => toggleSection("categories")}
                         className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Tag className="h-4 w-4 text-primary" />
                           <span className="font-semibold text-sm">Catégories</span>
                           {selectedCategories.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">{selectedCategories.length}</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {selectedCategories.length}
+                            </Badge>
                           )}
                         </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'categories' ? 'rotate-90' : ''}`} />
+                        <ChevronRight
+                          className={`h-4 w-4 transition-transform ${
+                            expandedSection === "categories" ? "rotate-90" : ""
+                          }`}
+                        />
                       </button>
-                      {expandedSection === 'categories' && (
+                      {expandedSection === "categories" && (
                         <div className="p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                          {categories.filter(cat => !medicalEquipmentCategories.includes(cat.slug)).map((cat) => (
-                            <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
-                              <input
-                                type="checkbox"
-                                checked={selectedCategories.includes(cat.slug)}
-                                onChange={() => toggleCategory(cat.slug)}
-                                className="w-4 h-4 accent-primary rounded"
-                              />
-                              <span className="text-sm group-hover:text-primary transition-colors">
-                                {cat.name}
-                              </span>
-                            </label>
-                          ))}
+                          {categories
+                            .filter((cat) => !medicalEquipmentCategories.includes(cat.slug))
+                            .map((cat) => (
+                              <label
+                                key={cat.id}
+                                className="flex items-center gap-2 cursor-pointer group"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCategories.includes(cat.slug)}
+                                  onChange={() => toggleCategory(cat.slug)}
+                                  className="w-4 h-4 accent-primary rounded"
+                                />
+                                <span className="text-sm group-hover:text-primary transition-colors">
+                                  {cat.name}
+                                </span>
+                              </label>
+                            ))}
                         </div>
                       )}
                     </div>
 
                     <div className="border border-border rounded-xl overflow-hidden">
                       <button
-                        onClick={() => toggleSection('medical')}
+                        onClick={() => toggleSection("medical")}
                         className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <Stethoscope className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-sm">Matériel médical</span>
+                          <HeartPulse className="h-4 w-4 text-primary" />
+                          <span className="font-semibold text-sm">
+                            Matériel & maintien à domicile
+                          </span>
                           {selectedMedicalEquipment.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">{selectedMedicalEquipment.length}</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {selectedMedicalEquipment.length}
+                            </Badge>
                           )}
                         </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'medical' ? 'rotate-90' : ''}`} />
+                        <ChevronRight
+                          className={`h-4 w-4 transition-transform ${
+                            expandedSection === "medical" ? "rotate-90" : ""
+                          }`}
+                        />
                       </button>
-                      {expandedSection === 'medical' && (
+                      {expandedSection === "medical" && (
                         <div className="p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                          {categories.filter(cat => medicalEquipmentCategories.includes(cat.slug)).map((cat) => (
-                            <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
-                              <input
-                                type="checkbox"
-                                checked={selectedMedicalEquipment.includes(cat.slug)}
-                                onChange={() => toggleMedicalEquipment(cat.slug)}
-                                className="w-4 h-4 accent-primary rounded"
-                              />
-                              <span className="text-sm group-hover:text-primary transition-colors">
-                                {cat.name}
-                              </span>
-                            </label>
-                          ))}
+                          {categories
+                            .filter((cat) => medicalEquipmentCategories.includes(cat.slug))
+                            .map((cat) => (
+                              <label
+                                key={cat.id}
+                                className="flex items-center gap-2 cursor-pointer group"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedMedicalEquipment.includes(cat.slug)}
+                                  onChange={() => toggleMedicalEquipment(cat.slug)}
+                                  className="w-4 h-4 accent-primary rounded"
+                                />
+                                <span className="text-sm group-hover:text-primary transition-colors">
+                                  {cat.name}
+                                </span>
+                              </label>
+                            ))}
                         </div>
                       )}
                     </div>
 
                     <div className="border border-border rounded-xl overflow-hidden">
                       <button
-                        onClick={() => toggleSection('brands')}
+                        onClick={() => toggleSection("brands")}
                         className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Sliders className="h-4 w-4 text-primary" />
                           <span className="font-semibold text-sm">Marques</span>
                           {selectedBrands.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">{selectedBrands.length}</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {selectedBrands.length}
+                            </Badge>
                           )}
                         </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'brands' ? 'rotate-90' : ''}`} />
+                        <ChevronRight
+                          className={`h-4 w-4 transition-transform ${
+                            expandedSection === "brands" ? "rotate-90" : ""
+                          }`}
+                        />
                       </button>
-                      {expandedSection === 'brands' && (
+                      {expandedSection === "brands" && (
                         <div className="p-4 space-y-2 max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
                           {brands.map((brand) => (
-                            <label key={brand.id} className="flex items-center gap-2 cursor-pointer group">
+                            <label
+                              key={brand.id}
+                              className="flex items-center gap-2 cursor-pointer group"
+                            >
                               <input
                                 type="checkbox"
                                 checked={selectedBrands.includes(brand.slug)}
@@ -407,21 +609,29 @@ function CatalogContent() {
 
                     <div className="border border-border rounded-xl overflow-hidden">
                       <button
-                        onClick={() => toggleSection('price')}
+                        onClick={() => toggleSection("price")}
                         className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-sm">Prix</span>
                           {(priceRange[0] !== 0 || priceRange[1] !== 100) && (
-                            <Badge variant="secondary" className="text-xs">{priceRange[0]}€-{priceRange[1]}€</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {priceRange[0]}€-{priceRange[1]}€
+                            </Badge>
                           )}
                         </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'price' ? 'rotate-90' : ''}`} />
+                        <ChevronRight
+                          className={`h-4 w-4 transition-transform ${
+                            expandedSection === "price" ? "rotate-90" : ""
+                          }`}
+                        />
                       </button>
-                      {expandedSection === 'price' && (
+                      {expandedSection === "price" && (
                         <div className="p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
                           <div className="space-y-3">
-                            <label className="text-xs text-muted-foreground">Prix minimum: {tempPriceRange[0]}€</label>
+                            <label className="text-xs text-muted-foreground">
+                              Prix minimum: {tempPriceRange[0]}€
+                            </label>
                             <input
                               type="range"
                               min="0"
@@ -432,7 +642,9 @@ function CatalogContent() {
                             />
                           </div>
                           <div className="space-y-3">
-                            <label className="text-xs text-muted-foreground">Prix maximum: {tempPriceRange[1]}€</label>
+                            <label className="text-xs text-muted-foreground">
+                              Prix maximum: {tempPriceRange[1]}€
+                            </label>
                             <input
                               type="range"
                               min="0"
@@ -448,7 +660,7 @@ function CatalogContent() {
                             <div className="flex flex-wrap gap-2">
                               {[null, 5, 4, 3].map((rating) => (
                                 <button
-                                  key={rating || 'all'}
+                                  key={rating || "all"}
                                   onClick={() => setMinRating(rating)}
                                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                     minRating === rating
@@ -456,7 +668,7 @@ function CatalogContent() {
                                       : "bg-muted text-foreground hover:bg-muted/80"
                                   }`}
                                 >
-                                  {rating ? `${rating}★+` : 'Toutes'}
+                                  {rating ? `${rating}★+` : "Toutes"}
                                 </button>
                               ))}
                             </div>
@@ -467,7 +679,7 @@ function CatalogContent() {
 
                     <div className="border border-border rounded-xl overflow-hidden">
                       <button
-                        onClick={() => toggleSection('options')}
+                        onClick={() => toggleSection("options")}
                         className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-2">
@@ -478,9 +690,13 @@ function CatalogContent() {
                             </Badge>
                           )}
                         </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'options' ? 'rotate-90' : ''}`} />
+                        <ChevronRight
+                          className={`h-4 w-4 transition-transform ${
+                            expandedSection === "options" ? "rotate-90" : ""
+                          }`}
+                        />
                       </button>
-                      {expandedSection === 'options' && (
+                      {expandedSection === "options" && (
                         <div className="p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
                           <label className="flex items-center gap-2 cursor-pointer group">
                             <input
@@ -511,25 +727,37 @@ function CatalogContent() {
                   </div>
                 )}
 
+                {/* Filtres - desktop */}
                 <div className="hidden lg:block bg-white rounded-2xl shadow-soft border border-border p-4 space-y-3">
-                    <div className="border border-border rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('categories')}
-                        className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Tag className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-sm">Catégories</span>
-                          {selectedCategories.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">{selectedCategories.length}</Badge>
-                          )}
-                        </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'categories' ? 'rotate-90' : ''}`} />
-                      </button>
-                      {expandedSection === 'categories' && (
-                        <div className="p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                          {categories.filter(cat => !medicalEquipmentCategories.includes(cat.slug)).map((cat) => (
-                            <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleSection("categories")}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-sm">Catégories</span>
+                        {selectedCategories.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedCategories.length}
+                          </Badge>
+                        )}
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform ${
+                          expandedSection === "categories" ? "rotate-90" : ""
+                        }`}
+                      />
+                    </button>
+                    {expandedSection === "categories" && (
+                      <div className="p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                        {categories
+                          .filter((cat) => !medicalEquipmentCategories.includes(cat.slug))
+                          .map((cat) => (
+                            <label
+                              key={cat.id}
+                              className="flex items-center gap-2 cursor-pointer group"
+                            >
                               <input
                                 type="checkbox"
                                 checked={selectedCategories.includes(cat.slug)}
@@ -541,28 +769,41 @@ function CatalogContent() {
                               </span>
                             </label>
                           ))}
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                  </div>
 
-                    <div className="border border-border rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('medical')}
-                        className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Stethoscope className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-sm">Matériel médical</span>
-                          {selectedMedicalEquipment.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">{selectedMedicalEquipment.length}</Badge>
-                          )}
-                        </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'medical' ? 'rotate-90' : ''}`} />
-                      </button>
-                      {expandedSection === 'medical' && (
-                        <div className="p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                          {categories.filter(cat => medicalEquipmentCategories.includes(cat.slug)).map((cat) => (
-                            <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleSection("medical")}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <HeartPulse className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-sm">
+                          Matériel & maintien à domicile
+                        </span>
+                        {selectedMedicalEquipment.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedMedicalEquipment.length}
+                          </Badge>
+                        )}
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform ${
+                          expandedSection === "medical" ? "rotate-90" : ""
+                        }`}
+                      />
+                    </button>
+                    {expandedSection === "medical" && (
+                      <div className="p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                        {categories
+                          .filter((cat) => medicalEquipmentCategories.includes(cat.slug))
+                          .map((cat) => (
+                            <label
+                              key={cat.id}
+                              className="flex items-center gap-2 cursor-pointer group"
+                            >
                               <input
                                 type="checkbox"
                                 checked={selectedMedicalEquipment.includes(cat.slug)}
@@ -574,164 +815,184 @@ function CatalogContent() {
                               </span>
                             </label>
                           ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="border border-border rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('brands')}
-                        className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Sliders className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-sm">Marques</span>
-                          {selectedBrands.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">{selectedBrands.length}</Badge>
-                          )}
-                        </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'brands' ? 'rotate-90' : ''}`} />
-                      </button>
-                      {expandedSection === 'brands' && (
-                        <div className="p-4 space-y-2 max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
-                          {brands.map((brand) => (
-                            <label key={brand.id} className="flex items-center gap-2 cursor-pointer group">
-                              <input
-                                type="checkbox"
-                                checked={selectedBrands.includes(brand.slug)}
-                                onChange={() => toggleBrand(brand.slug)}
-                                className="w-4 h-4 accent-primary rounded"
-                              />
-                              <span className="text-sm group-hover:text-primary transition-colors">
-                                {brand.name}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="border border-border rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('price')}
-                        className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">Prix</span>
-                          {(priceRange[0] !== 0 || priceRange[1] !== 100) && (
-                            <Badge variant="secondary" className="text-xs">{priceRange[0]}€-{priceRange[1]}€</Badge>
-                          )}
-                        </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'price' ? 'rotate-90' : ''}`} />
-                      </button>
-                      {expandedSection === 'price' && (
-                        <div className="p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                          <div className="space-y-3">
-                            <label className="text-xs text-muted-foreground">Prix minimum: {tempPriceRange[0]}€</label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={tempPriceRange[0]}
-                              onChange={(e) => handleMinPriceChange(Number(e.target.value))}
-                              className="w-full accent-primary"
-                            />
-                          </div>
-                          <div className="space-y-3">
-                            <label className="text-xs text-muted-foreground">Prix maximum: {tempPriceRange[1]}€</label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={tempPriceRange[1]}
-                              onChange={(e) => handleMaxPriceChange(Number(e.target.value))}
-                              className="w-full accent-primary"
-                            />
-                          </div>
-
-                          <div className="pt-3 border-t">
-                            <h4 className="font-semibold text-sm mb-2">Note minimum</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {[null, 5, 4, 3].map((rating) => (
-                                <button
-                                  key={rating || 'all'}
-                                  onClick={() => setMinRating(rating)}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                    minRating === rating
-                                      ? "bg-primary text-white shadow-sm"
-                                      : "bg-muted text-foreground hover:bg-muted/80"
-                                  }`}
-                                >
-                                  {rating ? `${rating}★+` : 'Toutes'}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="border border-border rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => toggleSection('options')}
-                        className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">Options</span>
-                          {(showNewOnly || showInStockOnly) && (
-                            <Badge variant="secondary" className="text-xs">
-                              {(showNewOnly ? 1 : 0) + (showInStockOnly ? 1 : 0)}
-                            </Badge>
-                          )}
-                        </div>
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedSection === 'options' ? 'rotate-90' : ''}`} />
-                      </button>
-                      {expandedSection === 'options' && (
-                        <div className="p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={showNewOnly}
-                              onChange={(e) => setShowNewOnly(e.target.checked)}
-                              className="w-4 h-4 accent-primary rounded"
-                            />
-                            <span className="text-sm group-hover:text-primary transition-colors">
-                              Nouveautés uniquement
-                            </span>
-                          </label>
-
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={showInStockOnly}
-                              onChange={(e) => setShowInStockOnly(e.target.checked)}
-                              className="w-4 h-4 accent-primary rounded"
-                            />
-                            <span className="text-sm group-hover:text-primary transition-colors">
-                              En stock uniquement
-                            </span>
-                          </label>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
+
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleSection("brands")}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sliders className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-sm">Marques</span>
+                        {selectedBrands.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedBrands.length}
+                          </Badge>
+                        )}
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform ${
+                          expandedSection === "brands" ? "rotate-90" : ""
+                        }`}
+                      />
+                    </button>
+                    {expandedSection === "brands" && (
+                      <div className="p-4 space-y-2 max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+                        {brands.map((brand) => (
+                          <label
+                            key={brand.id}
+                            className="flex items-center gap-2 cursor-pointer group"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedBrands.includes(brand.slug)}
+                              onChange={() => toggleBrand(brand.slug)}
+                              className="w-4 h-4 accent-primary rounded"
+                            />
+                            <span className="text-sm group-hover:text-primary transition-colors">
+                              {brand.name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleSection("price")}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">Prix</span>
+                        {(priceRange[0] !== 0 || priceRange[1] !== 100) && (
+                          <Badge variant="secondary" className="text-xs">
+                            {priceRange[0]}€-{priceRange[1]}€
+                          </Badge>
+                        )}
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform ${
+                          expandedSection === "price" ? "rotate-90" : ""
+                        }`}
+                      />
+                    </button>
+                    {expandedSection === "price" && (
+                      <div className="p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                        <div className="space-y-3">
+                          <label className="text-xs text-muted-foreground">
+                            Prix minimum: {tempPriceRange[0]}€
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={tempPriceRange[0]}
+                            onChange={(e) => handleMinPriceChange(Number(e.target.value))}
+                            className="w-full accent-primary"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs text-muted-foreground">
+                            Prix maximum: {tempPriceRange[1]}€
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={tempPriceRange[1]}
+                            onChange={(e) => handleMaxPriceChange(Number(e.target.value))}
+                            className="w-full accent-primary"
+                          />
+                        </div>
+
+                        <div className="pt-3 border-t">
+                          <h4 className="font-semibold text-sm mb-2">Note minimum</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {[null, 5, 4, 3].map((rating) => (
+                              <button
+                                key={rating || "all"}
+                                onClick={() => setMinRating(rating)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                  minRating === rating
+                                    ? "bg-primary text-white shadow-sm"
+                                    : "bg-muted text-foreground hover:bg-muted/80"
+                                }`}
+                              >
+                                {rating ? `${rating}★+` : "Toutes"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border border-border rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleSection("options")}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">Options</span>
+                        {(showNewOnly || showInStockOnly) && (
+                          <Badge variant="secondary" className="text-xs">
+                            {(showNewOnly ? 1 : 0) + (showInStockOnly ? 1 : 0)}
+                          </Badge>
+                        )}
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform ${
+                          expandedSection === "options" ? "rotate-90" : ""
+                        }`}
+                      />
+                    </button>
+                    {expandedSection === "options" && (
+                      <div className="p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={showNewOnly}
+                            onChange={(e) => setShowNewOnly(e.target.checked)}
+                            className="w-4 h-4 accent-primary rounded"
+                          />
+                          <span className="text-sm group-hover:text-primary transition-colors">
+                            Nouveautés uniquement
+                          </span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={showInStockOnly}
+                            onChange={(e) => setShowInStockOnly(e.target.checked)}
+                            className="w-4 h-4 accent-primary rounded"
+                          />
+                          <span className="text-sm group-hover:text-primary transition-colors">
+                            En stock uniquement
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </aside>
 
+            {/* Liste produits */}
             <div className="flex-1 min-w-0">
               {activeFiltersCount > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4 bg-white rounded-xl p-3 border border-border">
                   {selectedCategories.map((slug) => {
-                    const cat = categories.find(c => c.slug === slug)
+                    const cat = categories.find((c) => c.slug === slug)
                     return cat ? (
-                      <Badge
-                        key={slug}
-                        variant="secondary"
-                        className="gap-1.5 pr-1"
-                      >
+                      <Badge key={slug} variant="secondary" className="gap-1.5 pr-1">
                         {cat.name}
                         <button
-                          onClick={() => removeFilter('category', slug)}
+                          onClick={() => removeFilter("category", slug)}
                           className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                         >
                           <X className="h-3 w-3" />
@@ -740,16 +1001,12 @@ function CatalogContent() {
                     ) : null
                   })}
                   {selectedMedicalEquipment.map((slug) => {
-                    const cat = categories.find(c => c.slug === slug)
+                    const cat = categories.find((c) => c.slug === slug)
                     return cat ? (
-                      <Badge
-                        key={slug}
-                        variant="secondary"
-                        className="gap-1.5 pr-1"
-                      >
+                      <Badge key={slug} variant="secondary" className="gap-1.5 pr-1">
                         {cat.name}
                         <button
-                          onClick={() => removeFilter('medical', slug)}
+                          onClick={() => removeFilter("medical", slug)}
                           className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                         >
                           <X className="h-3 w-3" />
@@ -758,16 +1015,12 @@ function CatalogContent() {
                     ) : null
                   })}
                   {selectedBrands.map((slug) => {
-                    const brand = brands.find(b => b.slug === slug)
+                    const brand = brands.find((b) => b.slug === slug)
                     return brand ? (
-                      <Badge
-                        key={slug}
-                        variant="secondary"
-                        className="gap-1.5 pr-1"
-                      >
+                      <Badge key={slug} variant="secondary" className="gap-1.5 pr-1">
                         {brand.name}
                         <button
-                          onClick={() => removeFilter('brand', slug)}
+                          onClick={() => removeFilter("brand", slug)}
                           className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                         >
                           <X className="h-3 w-3" />
@@ -779,7 +1032,7 @@ function CatalogContent() {
                     <Badge variant="secondary" className="gap-1.5 pr-1">
                       Note {minRating}★+
                       <button
-                        onClick={() => removeFilter('rating')}
+                        onClick={() => removeFilter("rating")}
                         className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                       >
                         <X className="h-3 w-3" />
@@ -790,7 +1043,7 @@ function CatalogContent() {
                     <Badge variant="secondary" className="gap-1.5 pr-1">
                       {priceRange[0]}€ - {priceRange[1]}€
                       <button
-                        onClick={() => removeFilter('price')}
+                        onClick={() => removeFilter("price")}
                         className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                       >
                         <X className="h-3 w-3" />
@@ -801,7 +1054,7 @@ function CatalogContent() {
                     <Badge variant="secondary" className="gap-1.5 pr-1">
                       Nouveautés
                       <button
-                        onClick={() => removeFilter('new')}
+                        onClick={() => removeFilter("new")}
                         className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                       >
                         <X className="h-3 w-3" />
@@ -812,7 +1065,7 @@ function CatalogContent() {
                     <Badge variant="secondary" className="gap-1.5 pr-1">
                       En stock
                       <button
-                        onClick={() => removeFilter('stock')}
+                        onClick={() => removeFilter("stock")}
                         className="ml-1 rounded-full hover:bg-muted p-0.5 transition-colors"
                       >
                         <X className="h-3 w-3" />
@@ -821,13 +1074,17 @@ function CatalogContent() {
                   )}
                 </div>
               )}
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
                 <p className="text-sm text-muted-foreground">
                   {loading ? (
                     <span className="inline-block h-4 w-32 bg-muted rounded animate-pulse" />
                   ) : (
                     <>
-                      <span className="font-bold text-foreground">{products.length}</span> produit{products.length !== 1 ? 's' : ''}
+                      <span className="font-bold text-foreground">
+                        {products.length}
+                      </span>{" "}
+                      produit{products.length !== 1 ? "s" : ""}
                     </>
                   )}
                 </p>
@@ -838,44 +1095,73 @@ function CatalogContent() {
                     className="w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-sm font-medium cursor-pointer hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
                   >
                     <span>
-                      {sortBy === 'popular' && 'Populaires'}
-                      {sortBy === 'price-low' && 'Prix croissant'}
-                      {sortBy === 'price-high' && 'Prix décroissant'}
-                      {sortBy === 'newest' && 'Les plus récents'}
-                      {sortBy === 'rating' && 'Meilleures notes'}
+                      {sortBy === "popular" && "Populaires"}
+                      {sortBy === "price-low" && "Prix croissant"}
+                      {sortBy === "price-high" && "Prix décroissant"}
+                      {sortBy === "newest" && "Les plus récents"}
+                      {sortBy === "rating" && "Meilleures notes"}
                     </span>
-                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`h-4 w-4 text-muted-foreground transition-transform ${
+                        showSortMenu ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
 
                   {showSortMenu && (
                     <div className="absolute top-full mt-1 right-0 w-full sm:w-56 bg-white border border-border rounded-xl shadow-soft overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-10">
                       <button
-                        onClick={() => { setSortBy('popular'); setShowSortMenu(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${sortBy === 'popular' ? 'bg-muted/30 font-semibold text-primary' : ''}`}
+                        onClick={() => {
+                          setSortBy("popular")
+                          setShowSortMenu(false)
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${
+                          sortBy === "popular" ? "bg-muted/30 font-semibold text-primary" : ""
+                        }`}
                       >
                         Populaires
                       </button>
                       <button
-                        onClick={() => { setSortBy('price-low'); setShowSortMenu(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${sortBy === 'price-low' ? 'bg-muted/30 font-semibold text-primary' : ''}`}
+                        onClick={() => {
+                          setSortBy("price-low")
+                          setShowSortMenu(false)
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${
+                          sortBy === "price-low" ? "bg-muted/30 font-semibold text-primary" : ""
+                        }`}
                       >
                         Prix croissant
                       </button>
                       <button
-                        onClick={() => { setSortBy('price-high'); setShowSortMenu(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${sortBy === 'price-high' ? 'bg-muted/30 font-semibold text-primary' : ''}`}
+                        onClick={() => {
+                          setSortBy("price-high")
+                          setShowSortMenu(false)
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${
+                          sortBy === "price-high" ? "bg-muted/30 font-semibold text-primary" : ""
+                        }`}
                       >
                         Prix décroissant
                       </button>
                       <button
-                        onClick={() => { setSortBy('newest'); setShowSortMenu(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${sortBy === 'newest' ? 'bg-muted/30 font-semibold text-primary' : ''}`}
+                        onClick={() => {
+                          setSortBy("newest")
+                          setShowSortMenu(false)
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${
+                          sortBy === "newest" ? "bg-muted/30 font-semibold text-primary" : ""
+                        }`}
                       >
                         Les plus récents
                       </button>
                       <button
-                        onClick={() => { setSortBy('rating'); setShowSortMenu(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${sortBy === 'rating' ? 'bg-muted/30 font-semibold text-primary' : ''}`}
+                        onClick={() => {
+                          setSortBy("rating")
+                          setShowSortMenu(false)
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors ${
+                          sortBy === "rating" ? "bg-muted/30 font-semibold text-primary" : ""
+                        }`}
                       >
                         Meilleures notes
                       </button>
@@ -887,7 +1173,10 @@ function CatalogContent() {
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="bg-white rounded-2xl shadow-soft overflow-hidden animate-pulse">
+                    <div
+                      key={i}
+                      className="bg-white rounded-2xl shadow-soft overflow-hidden animate-pulse"
+                    >
                       <div className="h-48 bg-muted" />
                       <div className="p-4 space-y-3">
                         <div className="h-4 bg-muted rounded w-3/4" />
@@ -898,17 +1187,19 @@ function CatalogContent() {
                   ))}
                 </div>
               ) : products.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl">
+                <div className="text-center py-16 bg-white rounded-2xl shadow-soft border border-border">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
                     <Sliders className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Aucun produit trouvé</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Essayez de modifier vos filtres
+                  <h3 className="text-xl font-semibold mb-2">
+                    Aucun produit ne correspond à vos critères
+                  </h3>
+                  <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                    Ajustez vos filtres ou contactez directement l&apos;équipe de la
+                    Pharmacie Croix d&apos;Or : nous pourrons vous proposer une
+                    alternative adaptée à votre besoin.
                   </p>
-                  <Button onClick={resetFilters}>
-                    Réinitialiser les filtres
-                  </Button>
+                  <Button onClick={resetFilters}>Réinitialiser les filtres</Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -928,22 +1219,24 @@ function CatalogContent() {
 
 export default function CatalogPage() {
   return (
-    <Suspense fallback={
-      <>
-        <Header />
-        <main className="flex-1 bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-8">
-            <div className="h-10 w-64 bg-muted rounded animate-pulse mb-8" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-96 bg-muted rounded-2xl animate-pulse" />
-              ))}
+    <Suspense
+      fallback={
+        <>
+          <Header />
+          <main className="flex-1 bg-slate-50">
+            <div className="mx-auto max-w-7xl px-4 py-8">
+              <div className="h-10 w-64 bg-muted rounded animate-pulse mb-8" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="h-96 bg-muted rounded-2xl animate-pulse" />
+                ))}
+              </div>
             </div>
-          </div>
-        </main>
-        <Footer />
-      </>
-    }>
+          </main>
+          <Footer />
+        </>
+      }
+    >
       <CatalogContent />
     </Suspense>
   )
