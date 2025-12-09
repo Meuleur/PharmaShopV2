@@ -1,15 +1,52 @@
 "use client"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
+import { useEffect, useState } from "react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { getPromotionProducts } from "@/lib/mock-data"
 import { ProductCard } from "@/components/product-card"
 import { Percent, Sparkles } from "lucide-react"
+import { supabase, type Product } from "@/lib/supabase"
 
 export default function PromotionsPage() {
-  const promotionProducts = getPromotionProducts()
+  const [promotionProducts, setPromotionProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchPromotions() {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select(
+            `
+            *,
+            brand:brands(*),
+            category:categories(*)
+          `
+          )
+          .not("original_price", "is", null)      // original_price non null
+          .eq("is_active", true)                  // optionnel si tu utilises ce flag
+          .gt("stock_quantity", 0)                // optionnel : uniquement en stock
+
+        if (error) throw error
+
+        // Filtre côté client: vraie promo (price < original_price)
+        const promos = (data || []).filter(
+          (p) => p.original_price && p.original_price > p.price
+        )
+
+        setPromotionProducts(promos)
+      } catch (err) {
+        console.error("Error fetching promotion products:", err)
+        setPromotionProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPromotions()
+  }, [])
 
   return (
     <>
@@ -28,18 +65,34 @@ export default function PromotionsPage() {
                 </p>
               </div>
             </div>
+
             <div className="mt-4 flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
               <Sparkles className="h-5 w-5 text-orange-600" />
-              <p className="text-sm font-medium text-orange-900">
-                <span className="font-bold">{promotionProducts.length} produits</span> en promotion actuellement
-              </p>
+              {loading ? (
+                <p className="text-sm font-medium text-orange-900">
+                  Chargement des promotions...
+                </p>
+              ) : (
+                <p className="text-sm font-medium text-orange-900">
+                  <span className="font-bold">{promotionProducts.length} produits</span> en promotion actuellement
+                </p>
+              )}
             </div>
           </div>
 
-          {promotionProducts.length > 0 ? (
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-80 bg-white rounded-2xl shadow-soft animate-pulse"
+                />
+              ))}
+            </div>
+          ) : promotionProducts.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {promotionProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} {...product} />
               ))}
             </div>
           ) : (

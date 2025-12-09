@@ -7,7 +7,8 @@ import { Footer } from "@/components/layout/footer"
 import { OfficineMap } from "@/components/OfficineMap";
 import MarqueeCategories, { type MarqueeItem } from "@/components/MarqueeCategories"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { supabase, type Product } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -28,7 +29,6 @@ import {
   Percent,
 } from "lucide-react"
 import Image from "next/image"
-import { getPromotionProducts } from "@/lib/mock-data"
 import { ProductCard } from "@/components/product-card"
 
 const cats: MarqueeItem[] = [
@@ -135,10 +135,40 @@ const services = [
 
 export default function HomePage() {
   const [chatbotOpen, setChatbotOpen] = useState(false)
+  const [promotionProducts, setPromotionProducts] = useState<Product[]>([])
+  const [loadingPromos, setLoadingPromos] = useState(true)
 
-  // On calcule une seule fois la liste des produits en promo par render,
-  // puis on la réutilise pour desktop + mobile
-  const promotionProducts = getPromotionProducts().slice(0, 4)
+  useEffect(() => {
+    async function fetchPromos() {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select(`
+            *,
+            brand:brands(*),
+            category:categories(*)
+          `)
+          .not("original_price", "is", null)
+          .gt("stock_quantity", 0)
+          .eq("is_active", true)
+
+        if (error) throw error
+
+        const promos = (data || [])
+          .filter(p => p.original_price && p.original_price > p.price)
+          .slice(0, 4) // 4 produits max sur la home
+
+        setPromotionProducts(promos)
+      } catch (err) {
+        console.error("Error fetching promotion products:", err)
+        setPromotionProducts([])
+      } finally {
+        setLoadingPromos(false)
+      }
+    }
+
+    fetchPromos()
+  }, [])
 
   return (
     <>
@@ -436,25 +466,60 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Desktop Grid */}
-            <div className="hidden sm:grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {promotionProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+                    {/* Desktop Grid */}
+        {loadingPromos ? (
+          <div className="hidden sm:grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-80 bg-white rounded-2xl shadow-soft animate-pulse" />
+            ))}
+          </div>
+        ) : promotionProducts.length > 0 ? (
+          <div className="hidden sm:grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {promotionProducts.map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        ) : (
+          <div className="hidden sm:flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white py-16 text-center">
+            <Percent className="h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-semibold">Aucune promotion disponible</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Revenez bientôt pour découvrir nos nouvelles offres
+            </p>
+          </div>
+        )}
 
-            {/* Mobile : carrousel horizontal */}
-            <div className="sm:hidden">
-              <div className="overflow-x-auto -mx-4 px-4">
-                <div className="flex gap-4 pb-4">
-                  {promotionProducts.map((product) => (
-                    <div key={product.id} className="flex-none w-[280px]">
-                      <ProductCard product={product} />
-                    </div>
-                  ))}
-                </div>
+        {/* Mobile : carrousel horizontal */}
+        <div className="sm:hidden">
+          {loadingPromos ? (
+            <div className="overflow-x-auto -mx-4 px-4">
+              <div className="flex gap-4 pb-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex-none w-[280px] h-80 bg-white rounded-2xl shadow-soft animate-pulse" />
+                ))}
               </div>
             </div>
+          ) : promotionProducts.length > 0 ? (
+            <div className="overflow-x-auto -mx-4 px-4">
+              <div className="flex gap-4 pb-4">
+                {promotionProducts.map((product) => (
+                  <div key={product.id} className="flex-none w-[280px]">
+                    <ProductCard {...product} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white py-16 text-center">
+              <Percent className="h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-semibold">Aucune promotion disponible</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Revenez bientôt pour découvrir nos nouvelles offres
+              </p>
+            </div>
+          )}
+        </div>
+
 
             {/* Bouton mobile "voir tout" */}
             <div className="mt-6 text-center sm:hidden">
