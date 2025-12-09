@@ -4,7 +4,18 @@ import { useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Smartphone, Newspaper, HeartPulse, Map, Video, ChevronRight, ChevronLeft } from "lucide-react"
+import {
+  Smartphone,
+  Newspaper,
+  HeartPulse,
+  Map,
+  Video,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react"
+
+// 🔴 IMPORTANT : supprime cette ligne, elle ne doit pas être là
+// import App from "next/app"
 
 const services = [
   {
@@ -44,8 +55,14 @@ const services = [
   {
     icon: HeartPulse,
     title: "Conseils santé",
-    description: "Découvrez nos conseils pratiques et guides pour prendre soin de votre santé au quotidien.",
-    features: ["Guides pratiques", "Conseils de pharmaciens", "Prévention et hygiène", "Astuces bien-être"],
+    description:
+      "Découvrez nos conseils pratiques et guides pour prendre soin de votre santé au quotidien.",
+    features: [
+      "Guides pratiques",
+      "Conseils de pharmaciens",
+      "Prévention et hygiène",
+      "Astuces bien-être",
+    ],
     cta: "Voir les conseils",
     href: "/conseils",
     gradient: "from-green-500/10 to-emerald-500/10",
@@ -55,8 +72,14 @@ const services = [
   {
     icon: Map,
     title: "Carte des épidémies",
-    description: "Suivez l'évolution des épidémies en temps réel dans votre région pour mieux vous protéger.",
-    features: ["Données en temps réel", "Alertes par région", "Conseils de prévention", "Statistiques détaillées"],
+    description:
+      "Suivez l'évolution des épidémies en temps réel dans votre région pour mieux vous protéger.",
+    features: [
+      "Données en temps réel",
+      "Alertes par région",
+      "Conseils de prévention",
+      "Statistiques détaillées",
+    ],
     cta: "Voir la carte",
     href: "/epidemies",
     gradient: "from-orange-500/10 to-red-500/10",
@@ -66,7 +89,8 @@ const services = [
   {
     icon: Video,
     title: "Téléconsultation Medadom",
-    description: "Consultez un médecin rapidement en ligne via notre partenaire Medadom, 7j/7 de 6h à minuit.",
+    description:
+      "Consultez un médecin rapidement en ligne via notre partenaire Medadom, 7j/7 de 6h à minuit.",
     features: [
       "Médecins disponibles 7j/7",
       "Consultation vidéo sécurisée",
@@ -78,6 +102,23 @@ const services = [
     gradient: "from-teal-500/10 to-cyan-500/10",
     iconColor: "text-teal-600",
     borderColor: "border-teal-200/50",
+  },
+  {
+    icon: Smartphone,
+    title: "Application mobile – carnet santé & rappels",
+    description:
+      "Centralisez vos traitements, vaccins et rappels directement dans votre application mobile.",
+    features: [
+      "Carnet de traitement toujours à jour",
+      "Rappels de prise et de renouvellement",
+      "Suivi des vaccins pour toute la famille",
+      "Accès rapide à vos informations en pharmacie",
+    ],
+    cta: "Découvrir dans l'app",
+    href: "/app#carnet-sante",
+    gradient: "from-indigo-500/10 to-sky-500/10",
+    iconColor: "text-indigo-600",
+    borderColor: "border-indigo-200/50",
   },
 ]
 
@@ -127,17 +168,22 @@ export function ServicesCarousel() {
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                  <div className={`p-2 rounded-lg bg-white shadow-sm`}>
+                  <div className="p-2 rounded-lg bg-white shadow-sm">
                     <Icon className={`h-5 w-5 ${service.iconColor}`} />
                   </div>
                   <span className="leading-tight">{service.title}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{service.description}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                  {service.description}
+                </p>
                 <ul className="space-y-1">
                   {service.features.slice(0, 3).map((feature, idx) => (
-                    <li key={idx} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                    <li
+                      key={idx}
+                      className="text-xs text-muted-foreground flex items-start gap-1.5"
+                    >
                       <ChevronRight className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
