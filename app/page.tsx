@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
+import { OfficineMap } from "@/components/OfficineMap";
 import MarqueeCategories, { type MarqueeItem } from "@/components/MarqueeCategories"
 import Link from "next/link"
 import { useState } from "react"
@@ -146,7 +147,7 @@ export default function HomePage() {
         {/* Hero */}
         <section className="relative overflow-hidden h-screen min-h-[600px]">
           <Image
-            src="/modern-pharmacy-interior-with-clean-white-shelves-.jpg"
+            src="/ComptoirCroixDor.jpeg"
             alt="Intérieur de pharmacie moderne"
             fill
             priority
@@ -467,6 +468,7 @@ export default function HomePage() {
         </section>
 
         {/* Officines + Contact */}
+        {/* Officines + Contact */}
         <section className="border-y bg-white overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 py-16">
             <div className="grid gap-6 md:grid-cols-2">
@@ -480,7 +482,10 @@ export default function HomePage() {
                   <p className="text-muted-foreground">
                     Localisez l'officine la plus proche pour un retrait immédiat.
                   </p>
-                  <div className="mt-4 h-56 w-full rounded-xl border bg-muted" aria-label="Carte placeholder" />
+
+                  {/* 👉 Remplacement du placeholder par la vraie carte */}
+                  <OfficineMap />
+
                   <Link href="/officines">
                     <Button className="mt-6 w-full" variant="secondary">
                       Voir les officines
@@ -489,6 +494,7 @@ export default function HomePage() {
                 </CardContent>
               </Card>
 
+              {/* ta carte Contact rapide reste identique */}
               <Card className="rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-2xl">
@@ -519,7 +525,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
         {/* Bloc conformité */}
         <section className="bg-white overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 py-10 md:py-12">
