@@ -1,6 +1,6 @@
 "use client"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
 import { use, useEffect, useState } from "react"
 import { Header } from "@/components/layout/header"
@@ -24,11 +24,15 @@ import {
   Minus,
   Plus,
   Share2,
-  Package
+  Package,
 } from "lucide-react"
 import { toast } from "sonner"
 
-export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
   const { slug } = use(params)
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,19 +45,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     async function fetchProduct() {
       try {
         const { data, error } = await supabase
-          .from('products')
-          .select(`
+          .from("products")
+          .select(
+            `
             *,
             brand:brands(*),
             category:categories(*)
-          `)
-          .eq('slug', slug)
+          `,
+          )
+          .eq("slug", slug)
           .maybeSingle()
 
         if (error) throw error
         setProduct(data)
       } catch (error) {
-        console.error('Error fetching product:', error)
+        console.error("Error fetching product:", error)
       } finally {
         setLoading(false)
       }
@@ -65,23 +71,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const handleAddToCart = () => {
     if (!product) return
 
+    // 👇 on prend la première image dispo
+    const images =
+      (product.images && product.images.length > 0
+        ? product.images
+        : product.image_url
+        ? [product.image_url]
+        : []) ?? []
+
     addItem({
       id: product.id,
       name: product.name,
-      brand: product.brand?.name || '',
+      brand: product.brand?.name || "",
       price: product.price,
       quantity,
-      image: product.image_url
+      image: images[0] || "/placeholder.svg",
     })
 
-    toast.success('Produit ajouté au panier !', {
-      description: `${quantity}x ${product.name}`
+    toast.success("Produit ajouté au panier !", {
+      description: `${quantity}x ${product.name}`,
     })
   }
 
   const handleToggleFavorite = () => {
-    setIsFavorite(!isFavorite)
-    toast.success(isFavorite ? 'Retiré des favoris' : 'Ajouté aux favoris')
+    setIsFavorite((prev) => !prev)
+    toast.success(isFavorite ? "Retiré des favoris" : "Ajouté aux favoris")
   }
 
   if (loading) {
@@ -116,7 +130,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           <div className="mx-auto max-w-7xl px-4 py-16 text-center">
             <AlertCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h1 className="text-2xl font-bold mb-2">Produit introuvable</h1>
-            <p className="text-muted-foreground mb-6">Ce produit n'existe pas ou a été retiré.</p>
+            <p className="text-muted-foreground mb-6">
+              Ce produit n&apos;existe pas ou a été retiré.
+            </p>
             <Link href="/catalog">
               <Button>Retour au catalogue</Button>
             </Link>
@@ -128,10 +144,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   }
 
   const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+    ? Math.round(
+        ((product.original_price - product.price) / product.original_price) *
+          100,
+      )
     : 0
 
-  const images = [product.image_url, ...(product.images || [])]
+  // 👇 construction propre du tableau d’images
+  const images: string[] =
+    (product.images && product.images.length > 0
+      ? product.images
+      : product.image_url
+      ? [product.image_url]
+      : []) ?? []
 
   return (
     <>
@@ -140,29 +165,45 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         <div className="bg-white border-b">
           <div className="mx-auto max-w-7xl px-4 py-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              <Link href="/" className="hover:text-primary transition-colors">Accueil</Link>
+              <Link
+                href="/"
+                className="hover:text-primary transition-colors"
+              >
+                Accueil
+              </Link>
               <ChevronRight className="h-4 w-4" />
-              <Link href="/catalog" className="hover:text-primary transition-colors">Catalogue</Link>
+              <Link
+                href="/catalog"
+                className="hover:text-primary transition-colors"
+              >
+                Catalogue
+              </Link>
               <ChevronRight className="h-4 w-4" />
               {product.category && (
                 <>
-                  <Link href={`/catalog?category=${product.category.slug}`} className="hover:text-primary transition-colors">
+                  <Link
+                    href={`/catalog?category=${product.category.slug}`}
+                    className="hover:text-primary transition-colors"
+                  >
                     {product.category.name}
                   </Link>
                   <ChevronRight className="h-4 w-4" />
                 </>
               )}
-              <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-none">{product.name}</span>
+              <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-none">
+                {product.name}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-4 py-6 md:py-12">
           <div className="grid lg:grid-cols-2 gap-6 md:gap-12 mb-12">
+            {/* Images */}
             <div className="space-y-4">
               <div className="relative aspect-square bg-white rounded-2xl border overflow-hidden group">
                 <Image
-                  src={images[selectedImage] || '/placeholder.svg'}
+                  src={images[selectedImage] || "/placeholder.svg"}
                   alt={product.name}
                   fill
                   className="object-contain p-4 md:p-8 group-hover:scale-110 transition-transform duration-500"
@@ -181,11 +222,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <button
                   onClick={handleToggleFavorite}
                   className="absolute bottom-3 md:bottom-4 right-3 md:right-4 p-2 md:p-3 bg-white rounded-full shadow-soft hover:shadow-soft-md transition-all hover:scale-110 active:scale-95"
-                  aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  aria-label={
+                    isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"
+                  }
                 >
                   <Heart
                     className={`h-4 w-4 md:h-5 md:w-5 transition-colors ${
-                      isFavorite ? "fill-destructive text-destructive" : "text-foreground"
+                      isFavorite
+                        ? "fill-destructive text-destructive"
+                        : "text-foreground"
                     }`}
                   />
                 </button>
@@ -198,11 +243,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
                       className={`relative flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg border-2 overflow-hidden transition-all ${
-                        selectedImage === idx ? 'border-primary shadow-md scale-105' : 'border-transparent hover:border-muted'
+                        selectedImage === idx
+                          ? "border-primary shadow-md scale-105"
+                          : "border-transparent hover:border-muted"
                       }`}
                     >
                       <Image
-                        src={img || '/placeholder.svg'}
+                        src={img || "/placeholder.svg"}
                         alt={`${product.name} - Image ${idx + 1}`}
                         fill
                         className="object-contain p-1 md:p-2"
@@ -213,17 +260,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               )}
             </div>
 
+            {/* Infos produit */}
             <div className="space-y-4 md:space-y-6">
               {product.brand && (
-                <Link href={`/brands/${product.brand.slug}`} className="text-sm font-medium text-primary hover:underline inline-block">
+                <Link
+                  href={`/brands/${product.brand.slug}`}
+                  className="text-sm font-medium text-primary hover:underline inline-block"
+                >
                   {product.brand.name}
                 </Link>
               )}
 
               <div>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 leading-tight">{product.name}</h1>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 leading-tight">
+                  {product.name}
+                </h1>
                 {product.short_description && (
-                  <p className="text-base md:text-lg text-muted-foreground">{product.short_description}</p>
+                  <p className="text-base md:text-lg text-muted-foreground">
+                    {product.short_description}
+                  </p>
                 )}
               </div>
 
@@ -234,13 +289,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       key={i}
                       className={`h-4 w-4 md:h-5 md:w-5 ${
                         i < Math.floor(product.rating)
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-muted'
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted"
                       }`}
                     />
                   ))}
                 </div>
-                <span className="text-sm font-medium">{product.rating.toFixed(1)}</span>
+                <span className="text-sm font-medium">
+                  {product.rating.toFixed(1)}
+                </span>
                 <span className="text-sm text-muted-foreground">
                   ({product.review_count} avis)
                 </span>
@@ -249,7 +306,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               {product.tags && product.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="capitalize text-xs">
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="capitalize text-xs"
+                    >
                       {tag}
                     </Badge>
                   ))}
@@ -258,7 +319,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
               <div className="border-y py-4 md:py-6 space-y-3">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-3xl md:text-4xl font-bold text-primary">{product.price.toFixed(2)}€</span>
+                  <span className="text-3xl md:text-4xl font-bold text-primary">
+                    {product.price.toFixed(2)}€
+                  </span>
                   {product.original_price && (
                     <span className="text-lg md:text-xl text-muted-foreground line-through">
                       {product.original_price.toFixed(2)}€
@@ -277,7 +340,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   ) : (
                     <>
                       <AlertCircle className="h-4 w-4 text-destructive" />
-                      <span className="text-destructive font-medium">Rupture de stock</span>
+                      <span className="text-destructive font-medium">
+                        Rupture de stock
+                      </span>
                     </>
                   )}
                 </div>
@@ -285,18 +350,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <label className="font-medium text-sm md:text-base">Quantité :</label>
+                  <label className="font-medium text-sm md:text-base">
+                    Quantité :
+                  </label>
                   <div className="flex items-center gap-2 border rounded-lg bg-white">
                     <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      onClick={() =>
+                        setQuantity((q) => Math.max(1, q - 1))
+                      }
                       className="p-2 md:p-3 hover:bg-muted transition-colors disabled:opacity-50"
                       disabled={quantity <= 1}
                     >
                       <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-10 md:w-12 text-center font-medium">{quantity}</span>
+                    <span className="w-10 md:w-12 text-center font-medium">
+                      {quantity}
+                    </span>
                     <button
-                      onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                      onClick={() =>
+                        setQuantity((q) =>
+                          Math.min(product.stock_quantity, q + 1),
+                        )
+                      }
                       className="p-2 md:p-3 hover:bg-muted transition-colors disabled:opacity-50"
                       disabled={quantity >= product.stock_quantity}
                     >
@@ -321,7 +396,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     className="sm:w-auto h-12 md:h-14"
                     onClick={handleToggleFavorite}
                   >
-                    <Heart className={`h-5 w-5 ${isFavorite ? 'fill-destructive text-destructive' : ''}`} />
+                    <Heart
+                      className={`h-5 w-5 ${
+                        isFavorite
+                          ? "fill-destructive text-destructive"
+                          : ""
+                      }`}
+                    />
                   </Button>
                   <Button
                     size="lg"
@@ -385,7 +466,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       Médicament soumis à prescription
                     </h3>
                     <p className="text-xs md:text-sm text-yellow-800">
-                      Ce produit nécessite une ordonnance valide. Vous pourrez l'envoyer lors de votre commande.
+                      Ce produit nécessite une ordonnance valide. Vous pourrez
+                      l&apos;envoyer lors de votre commande.
                     </p>
                   </div>
                 </div>

@@ -21,6 +21,7 @@ interface ProductCardProps {
     reviews: number
     stock: number
     tags: string[]
+    images?: string[]          // 👈 support des images côté "product"
   }
   id?: string
   name?: string
@@ -29,6 +30,7 @@ interface ProductCardProps {
   price?: number
   original_price?: number | null
   image_url?: string
+  images?: string[]            // 👈 support des images côté props directes (Supabase)
   rating?: number
   review_count?: number
   is_new?: boolean
@@ -44,21 +46,26 @@ export function ProductCard({
   price: propPrice,
   original_price,
   image_url,
+  images: propImages,          // 👈 on récupère aussi images depuis Supabase
   rating: propRating,
   review_count,
   is_new,
   stock_quantity
 }: ProductCardProps) {
-  const id = product?.id || propId || ''
-  const name = product?.name || propName || ''
-  const slug = propSlug || product?.id || ''
-  const brand = propBrand || (product?.brand ? { name: product.brand, slug: '' } : null)
+  const id = product?.id || propId || ""
+  const name = product?.name || propName || ""
+  const slug = propSlug || product?.id || ""
+  const brand = propBrand || (product?.brand ? { name: product.brand, slug: "" } : null)
   const price = product?.price || propPrice || 0
   const originalPrice = product?.originalPrice || original_price
-  const imageUrl = product?.image || image_url || '/placeholder.svg'
+
+  // 👇 priorité aux images[] (DB), puis image_url, puis image simple, puis placeholder
+  const images = product?.images || propImages
+  const imageUrl = images?.[0] || product?.image || image_url || "/placeholder.svg"
+
   const rating = product?.rating || propRating || 0
   const reviewCount = product?.reviews || review_count || 0
-  const isNew = product?.tags?.includes('nouveauté') || is_new
+  const isNew = product?.tags?.includes("nouveauté") || is_new
   const stockQuantity = product?.stock || stock_quantity || 0
   const [isFavorite, setIsFavorite] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
@@ -76,13 +83,13 @@ export function ProductCard({
     addItem({
       id,
       name,
-      brand: brand?.name || '',
+      brand: brand?.name || "",
       price,
       quantity: 1,
       image: imageUrl
     })
 
-    toast.success('Produit ajouté au panier !', {
+    toast.success("Produit ajouté au panier !", {
       description: `1x ${name}`
     })
 
@@ -93,7 +100,7 @@ export function ProductCard({
     e.preventDefault()
     e.stopPropagation()
     setIsFavorite(!isFavorite)
-    toast.success(isFavorite ? 'Retiré des favoris' : 'Ajouté aux favoris')
+    toast.success(isFavorite ? "Retiré des favoris" : "Ajouté aux favoris")
   }
 
   return (
